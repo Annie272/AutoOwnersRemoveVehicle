@@ -41,7 +41,6 @@
           />
         </div>
       
-
         <fieldset class="mb-4">
           <legend class="block text-sm font-medium text-gray-700 mb-1">
             Select the Request Type:<span class="star">*</span>
@@ -109,17 +108,8 @@
       
       <!-- Hidden Salesforce fields -->
       <input type="hidden" name="oid" value="00DU7000006EuID" />
-
-      <input
-        type="hidden"
-        name="retURL"
-        value="https://bennettandporter.com/"
-      />
-      <input
-        type="hidden"
-        name="first_name"
-        value="Auto Owners"
-      />
+      <input type="hidden" name="retURL" value="https://bennettandporter.com/" />
+      <input type="hidden" name="first_name" value="Auto Owners" />
       <input type="hidden" name="last_name" value="Remove Vehicle" />
       <input type="hidden" name="status" value="New" />
       <input type="hidden" name="phone" value="28138916529" />
@@ -129,11 +119,7 @@
       <input type="hidden" name="00NU7000005zuNN" id="Policy_Action__c" value="Remove Vehicle" />
       <input type="hidden" name="Form_Captured_Data__c" />
       <input type="hidden" name="Form_Missing_Data__c" />
-      <input
-        type="hidden"
-        name="company"
-        value="Auto Owners"
-      />
+      <input type="hidden" name="company" value="Auto Owners" />
 
       <div class="flex justify-end mt-6">
         <button
@@ -179,7 +165,6 @@
 document.addEventListener("DOMContentLoaded", function () {
 
   /* ===================== DATE PICKER ===================== */
-
   if (window.Pikaday) {
     new Pikaday({
       field: document.getElementById("00NU7000005zuLl"),
@@ -198,7 +183,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ===================== RADIO → HIDDEN FIELD ===================== */
-
   const radios = document.querySelectorAll('input[name="requestTypeRadios"]');
   const hiddenSelect = document.getElementById("00NU7000006IOzh");
 
@@ -208,18 +192,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   radios.forEach(radio => radio.addEventListener("change", syncRequestType));
-
-  if (hiddenSelect.value !== "") {
-    const matchedRadio = document.querySelector(`input[name="requestTypeRadios"][value="${hiddenSelect.value}"]`);
-    if (matchedRadio) matchedRadio.checked = true;
-  } else {
-    hiddenSelect.value = "";
-  }
-
   syncRequestType();
 
   /* ===================== FORM ELEMENTS ===================== */
-
   const reviewBtn = document.getElementById("reviewBtn");
   const dialog = document.getElementById("dialog");
   const dialogTitle = document.getElementById("dialogTitle");
@@ -228,7 +203,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const editBtn = document.getElementById("editBtn");
   const form = document.getElementById("mainForm");
 
-  const requiredFields = [
+  /* ===================== REQUIRED FIELDS ===================== */
+  const fieldData = [
     { id: "email", label: "Email", type: "email" },
     { radioGroupName: "requestTypeRadios", label: "Select the Request Type:" },
     { id: "00NU7000005zuX3", label: "Policy Number" },
@@ -237,12 +213,10 @@ document.addEventListener("DOMContentLoaded", function () {
   ];
 
   /* ===================== VALIDATION ===================== */
-
   function validateFields() {
     const missing = [];
 
-    requiredFields.forEach(field => {
-
+    fieldData.forEach(field => {
       if (field.radioGroupName) {
         const radios = document.querySelectorAll(`input[name="${field.radioGroupName}"]`);
         const checked = [...radios].some(r => r.checked);
@@ -269,56 +243,56 @@ document.addEventListener("DOMContentLoaded", function () {
     return missing;
   }
 
-  /* ===================== FORM CAPTURE ===================== */
-
-  function captureFormData() {
+  /* ===================== FORM CAPTURE (FIXED) ===================== */
+  function captureFormAudit() {
+    const captured = [];
     const missing = [];
-    const filled = [];
 
-    requiredFields.forEach(field => {
-
+    fieldData.forEach(field => {
       if (field.radioGroupName) {
         const radios = document.querySelectorAll(`input[name="${field.radioGroupName}"]`);
         const checked = [...radios].find(r => r.checked);
-        if (checked) filled.push(`${field.label}: ${checked.value}`);
-        else missing.push(field.label);
+        if (checked) {
+          captured.push(`${field.label} = ${checked.value}`);
+        } else {
+          missing.push(field.label);
+        }
         return;
       }
 
       const el = document.getElementById(field.id);
-      if (!el || !el.value.trim()) {
-        missing.push(field.label);
+      if (el && el.value.trim()) {
+        captured.push(`${field.label} = ${el.value.trim()}`);
       } else {
-        filled.push(`${field.label}: ${el.value.trim()}`);
+        missing.push(field.label);
       }
     });
 
-    let missingField = document.getElementById("Form_Missing_Data__c");
     let capturedField = document.getElementById("Form_Captured_Data__c");
-
-    if (!missingField) {
-      missingField = document.createElement("input");
-      missingField.type = "hidden";
-      missingField.id = "Form_Missing_Data__c";
-      missingField.name = "Form_Missing_Data__c";
-      form.appendChild(missingField);
-    }
+    let missingField = document.getElementById("Form_Missing_Data__c");
 
     if (!capturedField) {
       capturedField = document.createElement("input");
       capturedField.type = "hidden";
-      capturedField.id = "Form_Captured_Data__c";
       capturedField.name = "Form_Captured_Data__c";
+      capturedField.id = "Form_Captured_Data__c";
       form.appendChild(capturedField);
     }
 
-    missingField.value = missing.join("\n");
-    capturedField.value = filled.join("\n");
+    if (!missingField) {
+      missingField = document.createElement("input");
+      missingField.type = "hidden";
+      missingField.name = "Form_Missing_Data__c";
+      missingField.id = "Form_Missing_Data__c";
+      form.appendChild(missingField);
+    }
+
+  capturedField.value = captured.join("\n");
+  missingField.value = missing.join("\n");
 
   }
 
   /* ===================== UI FLOW ===================== */
-
   reviewBtn.addEventListener("click", () => {
     const missing = validateFields();
 
@@ -336,7 +310,7 @@ document.addEventListener("DOMContentLoaded", function () {
   editBtn.addEventListener("click", () => dialog.classList.add("hidden"));
 
   proceedBtn.addEventListener("click", () => {
-    captureFormData();
+    captureFormAudit();
     dialog.classList.add("hidden");
     form.submit();
   });
